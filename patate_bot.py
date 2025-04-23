@@ -697,7 +697,7 @@ async def on_message(message):
 
             joueur_actuel = joueurs[0]
             parties_uno[message.channel.id]["joueur_actuel"] = joueur_actuel.id
-            await message.channel.send(f"🕐 C’est à **{joueur_actuel.display_name}** de jouer !\nTape `!uno play couleur valeur` ou `!uno draw`.")
+            await message.channel.send(f"🕐 C’est à **{joueur_actuel.display_name}** de jouer !\nTape `!play couleur valeur` ou `!uno draw`.")
         return
 
     if content == "uno start" and message.channel.id == 1363967793669738626:
@@ -732,7 +732,7 @@ async def on_message(message):
                 couleur, valeur = parts[1], parts[2]
                 reponse = jouer_carte_avancee(message.channel.id, message.author.id, couleur, valeur)
             else:
-                reponse = "❌ Format incorrect. Tape : `!play rouge 3` ou `!play noir +4 jaune`"
+                reponse = "❌ Format incorrect. Tape : `!rouge 3` ou `!play noir +4 jaune`"
         except Exception as e:
             reponse = f"❌ Erreur lors de la lecture de la commande : {str(e)}"
 
