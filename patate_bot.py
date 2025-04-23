@@ -231,7 +231,7 @@ def jouer_carte_avec_noir(channel_id, joueur_id, couleur, valeur, couleur_choisi
         return f"🃏 Tu n’as pas cette carte : {couleur} {valeur}."
 
     if couleur == "noir" and not couleur_choisie:
-        return "🎨 Tu dois choisir une couleur à jouer avec cette carte noire ! (ex: !uno play noir +4 rouge)"
+        return "🎨 Tu dois choisir une couleur à jouer avec cette carte noire ! (ex: !play noir +4 rouge)"
 
     # Jouer la carte
     main.remove(carte)
@@ -291,6 +291,12 @@ def jouer_carte_avancee(channel_id, joueur_id, couleur, valeur):
     if not carte_valide(carte, partie["carte_visible"]):
         return f"🚫 Tu ne peux pas jouer cette carte sur {partie['carte_visible'][0]} {partie['carte_visible'][1]}." 
 
+    if valeur == "+2":
+        for _ in range(2):
+            partie["mains"][joueur_suivant.id].append(partie["deck"].pop())
+            message += "➕ Le joueur suivant pioche 2 cartes !\n"
+
+
     # Jouer la carte
     main.remove(carte)
     partie["carte_visible"] = carte
@@ -301,6 +307,13 @@ def jouer_carte_avancee(channel_id, joueur_id, couleur, valeur):
     # Avancer au joueur suivant
     joueurs = partie["joueurs"]
     index = next((i for i, j in enumerate(joueurs) if j.id == joueur_id), 0)
+    if valeur == "reverse":
+        joueurs.reverse()
+        index = len(joueurs) - 1 - index
+
+    if valeur == "skip":
+        index = (index + 1) % len(joueurs)
+
     joueur_suivant = joueurs[(index + 1) % len(joueurs)]
     partie["joueur_actuel"] = joueur_suivant.id
 
@@ -671,6 +684,11 @@ async def on_message(message):
 
     # Commande !uno
 
+    if content == "uno" and message.channel.id == 1363967793669738626:
+        await message.channel.send(f"🗣️ {message.author.display_name} crie **UNO !**")
+        return
+
+
     if content == "uno launch" and message.channel.id == 1363967793669738626:
         reponse = lancer_partie_uno(message.channel.id)
         await message.channel.send(reponse)
@@ -732,7 +750,7 @@ async def on_message(message):
                 couleur, valeur = parts[1], parts[2]
                 reponse = jouer_carte_avancee(message.channel.id, message.author.id, couleur, valeur)
             else:
-                reponse = "❌ Format incorrect. Tape : `!rouge 3` ou `!play noir +4 jaune`"
+                reponse = "❌ Format incorrect. Tape : `!play rouge 3` ou `!play noir +4 jaune`"
         except Exception as e:
             reponse = f"❌ Erreur lors de la lecture de la commande : {str(e)}"
 
