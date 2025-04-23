@@ -132,7 +132,243 @@ with open("pendu_data.json", "r", encoding="utf-8") as f:
 
 bac_en_cours = {}  # stocke la lettre en cours pour chaque joueur dans le jeu du baccalauréat
 
-# ---------- DONNE A MANGER AU CHAUT ----------------
+# ------- UNO - gestion des parties --------
+
+parties_uno = {}
+
+def initialiser_partie_uno(channel_id):
+    parties_uno[channel_id] = {
+        "joueurs": [],
+        "en_cours": False
+    }
+
+def rejoindre_partie_uno(channel_id, user):
+    if channel_id not in parties_uno:
+        return "❌ Aucune partie en cours. Tape `!uno start` d'abord."
+    if parties_uno[channel_id]["en_cours"]:
+        return "🚫 La partie a déjà commencé !"
+    if user.id in [j.id for j in parties_uno[channel_id]["joueurs"]]:
+        return "😼 Tu es déjà dans la partie."
+    if len(parties_uno[channel_id]["joueurs"]) >= 4:
+        return "🃏 La partie est pleine (4 joueurs max)."
+    parties_uno[channel_id]["joueurs"].append(user)
+    return f"✅ {user.display_name} a rejoint la partie UNO !"
+
+def lancer_partie_uno(channel_id):
+    if channel_id not in parties_uno:
+        return "❌ Aucune partie UNO ici. Tape `!uno start` pour en créer une."
+    joueurs = parties_uno[channel_id]["joueurs"]
+    if len(joueurs) < 2:
+        return "🙄 Faut être au moins 2 pour jouer, humain."
+    parties_uno[channel_id]["en_cours"] = True
+    noms = ", ".join([j.display_name for j in joueurs])
+    return f"🎉 La partie commence avec : {noms}\n(Patate distribue les cartes... en mode passif-agressif.)"
+
+def creer_deck_uno():
+    couleurs = ["rouge", "jaune", "vert", "bleu"]
+    valeurs = [str(n) for n in range(0, 10)] + ["skip", "+2", "reverse"]
+    deck = []
+
+    for couleur in couleurs:
+        for val in valeurs:
+            if val == "0":
+                deck.append((couleur, val))
+            else:
+                deck.extend([(couleur, val)] * 2)
+
+    specials = [("noir", "+4")] * 4 + [("noir", "joker")] * 4
+    deck.extend(specials)
+
+    random.shuffle(deck)
+    return deck
+
+def distribuer_mains(joueurs, deck):
+    mains = {}
+    for joueur in joueurs:
+        mains[joueur.id] = [deck.pop() for _ in range(7)]
+    return mains, deck
+
+def tirer_premiere_carte(deck):
+    while deck:
+        carte = deck.pop()
+        if carte[0] != "noir":
+            return carte, deck
+    return None, deck  # Si jamais il n'y avait que des cartes noires (improbable)
+
+def carte_valide(carte, carte_visible):
+    return (
+        carte[0] == carte_visible[0] or  # même couleur
+        carte[1] == carte_visible[1] or  # même valeur
+        carte[0] == "noir"               # carte spéciale
+    )
+
+def jouer_carte_avec_noir(channel_id, joueur_id, couleur, valeur, couleur_choisie=None):
+    if channel_id not in parties_uno:
+        return "❌ Aucune partie UNO ici."
+
+    partie = parties_uno[channel_id]
+    if not partie["en_cours"]:
+        return "🚫 La partie n'a pas encore commencé."
+
+    if joueur_id != partie["joueur_actuel"]:
+        return "🕐 Ce n’est pas ton tour, bipède impatient."
+
+    main = partie["mains"].get(joueur_id, [])
+    carte = (couleur, valeur)
+
+    if carte not in main:
+        return f"🃏 Tu n’as pas cette carte : {couleur} {valeur}."
+
+    if couleur == "noir" and not couleur_choisie:
+        return "🎨 Tu dois choisir une couleur à jouer avec cette carte noire ! (ex: !uno play noir +4 rouge)"
+
+    # Jouer la carte
+    main.remove(carte)
+    carte_visible = (couleur_choisie, valeur) if couleur == "noir" else carte
+    partie["carte_visible"] = carte_visible
+    victoire = verifier_victoire(channel_id, joueur_id)
+    if victoire:
+        return victoire
+
+    joueurs = partie["joueurs"]
+    index = next((i for i, j in enumerate(joueurs) if j.id == joueur_id), 0)
+    joueur_suivant = joueurs[(index + 1) % len(joueurs)]
+
+    message = f"✅ Carte jouée : {carte[0]} {carte[1]}\n🎨 Couleur choisie : {carte_visible[0]}\n"
+
+    if valeur == "+4":
+        for _ in range(4):
+            partie["mains"][joueur_suivant.id].append(partie["deck"].pop())
+        message += "➕ Le joueur suivant pioche 4 cartes !\n"
+
+    partie["joueur_actuel"] = joueur_suivant.id
+    message += f"🕐 C’est à **{joueur_suivant.display_name}** de jouer."
+
+    return message
+
+def verifier_victoire(channel_id, joueur_id):
+    if channel_id not in parties_uno:
+        return None  # Pas de partie
+
+    main = parties_uno[channel_id]["mains"].get(joueur_id, [])
+    if len(main) == 0:
+        parties_uno[channel_id]["en_cours"] = False
+        return f"🏆 **Victoire !** <@{joueur_id}> n’a plus de cartes.\n🎉 La partie est terminée. Patate te juge... mais t’applaudit quand même."
+    
+    return None
+
+
+
+def jouer_carte_avancee(channel_id, joueur_id, couleur, valeur):
+    if channel_id not in parties_uno:
+        return "❌ Aucune partie UNO ici."
+
+    partie = parties_uno[channel_id]
+
+    if not partie["en_cours"]:
+        return "🚫 La partie n'a pas encore commencé."
+
+    if joueur_id != partie["joueur_actuel"]:
+        return "🕐 Ce n’est pas ton tour, bipède impatient."
+
+    main = partie["mains"].get(joueur_id, [])
+    carte = (couleur, valeur)
+
+    if carte not in main:
+        return f"🃏 Tu n’as pas cette carte : {couleur} {valeur}."
+
+    if not carte_valide(carte, partie["carte_visible"]):
+        return f"🚫 Tu ne peux pas jouer cette carte sur {partie['carte_visible'][0]} {partie['carte_visible'][1]}." 
+
+    # Jouer la carte
+    main.remove(carte)
+    partie["carte_visible"] = carte
+    victoire = verifier_victoire(channel_id, joueur_id)
+    if victoire:
+        return victoire
+
+    # Avancer au joueur suivant
+    joueurs = partie["joueurs"]
+    index = next((i for i, j in enumerate(joueurs) if j.id == joueur_id), 0)
+    joueur_suivant = joueurs[(index + 1) % len(joueurs)]
+    partie["joueur_actuel"] = joueur_suivant.id
+
+    return f"✅ Carte jouée : {couleur} {valeur}\n📤 Nouvelle carte visible : {couleur} {valeur}\n🕐 C’est à **{joueur_suivant.display_name}** de jouer."
+
+def quitter_partie_uno(channel_id, joueur_id):
+    if channel_id not in parties_uno:
+        return "❌ Aucune partie UNO ici."
+
+    partie = parties_uno[channel_id]
+    joueurs = partie["joueurs"]
+
+    joueurs = [j for j in joueurs if j.id != joueur_id]
+    partie["joueurs"] = joueurs
+    partie["mains"].pop(joueur_id, None)
+
+    if len(joueurs) < 2:
+        partie["en_cours"] = False
+        return f"🚪 Le joueur <@{joueur_id}> a quitté la partie. Moins de 2 joueurs restants. La partie est terminée."
+
+    return f"🚪 Le joueur <@{joueur_id}> a quitté la partie UNO."
+
+def reset_partie_uno(channel_id):
+    if channel_id in parties_uno:
+        del parties_uno[channel_id]
+    return "♻️ Partie UNO réinitialisée. Tape `!uno start` pour en créer une nouvelle."
+
+
+def uno_piocher(channel_id, joueur_id):
+    if channel_id not in parties_uno:
+        return "❌ Aucune partie UNO ici."
+
+    partie = parties_uno[channel_id]
+
+    if not partie["en_cours"]:
+        return "🚫 La partie n'a pas encore commencé."
+
+    if joueur_id != partie["joueur_actuel"]:
+        return "🕐 Ce n’est pas ton tour, bipède impatient."
+
+    deck = partie.get("deck", [])
+    if not deck:
+        return "😿 Le paquet est vide. Patate panique."
+
+    carte = deck.pop()
+    partie["mains"][joueur_id].append(carte)
+
+    # Avancer au joueur suivant
+    joueurs = partie["joueurs"]
+    index = next((i for i, j in enumerate(joueurs) if j.id == joueur_id), 0)
+    joueur_suivant = joueurs[(index + 1) % len(joueurs)]
+    partie["joueur_actuel"] = joueur_suivant.id
+
+    return f"📥 Tu as pioché : {carte[0]} {carte[1]}\n🕐 C’est à **{joueur_suivant.display_name}** de jouer."
+
+async def uno_main(message):
+    channel_id = message.channel.id
+    user_id = message.author.id
+
+    if channel_id not in parties_uno:
+        await message.channel.send("❌ Aucune partie UNO ici.")
+        return
+
+    partie = parties_uno[channel_id]
+    if user_id not in partie["mains"]:
+        await message.channel.send("🚫 Tu ne participes pas à cette partie.")
+        return
+
+    main = partie["mains"][user_id]
+    cartes_txt = ", ".join([f"{c[0]} {c[1]}" for c in main])
+    try:
+        await message.author.send(f"🃏 **Voici ta main actuelle :**\n{cartes_txt}")
+    except:
+        await message.channel.send("❌ Impossible de t’envoyer ta main (DM désactivés ?)")
+
+
+
+
+# ---------- DONNE A MANGER AU CHAT ----------------
 
 # Fichier de sauvegarde
 PATAFILE = "patate_data.json"
@@ -410,13 +646,103 @@ async def on_member_remove(member):
 
     await salon_bienvenue.send(random.choice(messages_depart))
 
-
-
 @client.event
 async def on_message(message):
     if message.author == client.user:
         return
     content = message.content.lower().lstrip("!")
+
+    # Commande !uno
+
+    if content == "uno start" and message.channel.id == 1363967793669738626:
+        initialiser_partie_uno(message.channel.id)
+        await message.channel.send("🃏 Une nouvelle partie de UNO est lancée ! Tape `!uno join` pour rejoindre (max 4 joueurs).")
+        return
+
+    if content == "uno join" and message.channel.id == 1363967793669738626:
+        reponse = rejoindre_partie_uno(message.channel.id, message.author)
+        await message.channel.send(reponse)
+        return
+
+    if content == "uno launch" and message.channel.id == 1363967793669738626:
+        reponse = lancer_partie_uno(message.channel.id)
+        await message.channel.send(reponse)
+        
+         # Vérifie si la partie a bien été lancée
+    if "commence avec" in reponse:
+        joueurs = parties_uno[message.channel.id]["joueurs"]
+        deck = creer_deck_uno()
+        mains, deck = distribuer_mains(joueurs, deck)
+
+        parties_uno[message.channel.id]["deck"] = deck
+        parties_uno[message.channel.id]["mains"] = mains
+
+        for joueur in joueurs:
+            main = mains[joueur.id]
+            cartes_txt = ", ".join([f"{c[0]} {c[1]}" for c in main])
+            try:
+                await joueur.send(f"🃏 **Ta main de départ :**\n{cartes_txt}")
+            except:
+                await message.channel.send(f"❌ Impossible d’envoyer la main à {joueur.display_name} (DMs fermés ?)")
+        return
+    
+    # Tirer la première carte visible
+    premiere_carte, deck = tirer_premiere_carte(deck)
+    parties_uno[message.channel.id]["carte_visible"] = premiere_carte
+    await message.channel.send(f"📤 **Carte visible de départ :** {premiere_carte[0]} {premiere_carte[1]}")
+
+    # Tirer la première carte visible
+    premiere_carte, deck = tirer_premiere_carte(deck)
+    parties_uno[message.channel.id]["carte_visible"] = premiere_carte
+    await message.channel.send(f"📤 **Carte visible de départ :** {premiere_carte[0]} {premiere_carte[1]}")
+
+    # Définir le joueur actuel
+    joueur_actuel = joueurs[0]
+    parties_uno[message.channel.id]["joueur_actuel"] = joueur_actuel.id
+    await message.channel.send(f"🕐 C’est à **{joueur_actuel.display_name}** de jouer !\nTape `!uno play couleur valeur` ou `!uno draw`.")  
+
+    if content.startswith("uno play") and message.channel.id == 1363967793669738626:
+        try:
+            _, couleur, valeur = content.split(" ", 2)
+            reponse = jouer_carte_avancee(message.channel.id, message.author.id, couleur, valeur)
+            await message.channel.send(reponse)
+        except ValueError:
+            await message.channel.send("❌ Format incorrect. Tape : `!uno play rouge 3` ou `!uno play noir +4`")
+        return
+    if content == "uno draw" and message.channel.id == 1363967793669738626:
+        reponse = uno_piocher(message.channel.id, message.author.id)
+        await message.channel.send(reponse)
+        return
+
+    if content == "uno main" and message.channel.id == 1363967793669738626:
+        await uno_main(message)
+        return
+
+    if content.startswith("uno play") and message.channel.id == 1363967793669738626:
+        try:
+            parts = content.split(" ")
+            if parts[1] == "noir" and len(parts) == 4:
+                couleur, valeur, couleur_choisie = parts[1], parts[2], parts[3]
+                reponse = jouer_carte_avec_noir(message.channel.id, message.author.id, couleur, valeur, couleur_choisie)
+            else:
+                couleur, valeur = parts[1], parts[2]
+                reponse = jouer_carte_avancee(message.channel.id, message.author.id, couleur, valeur)
+
+            await message.channel.send(reponse)
+        except Exception as e:
+            await message.channel.send("❌ Format incorrect. Tape : `!uno play rouge 3` ou `!uno play noir +4 jaune`")
+        return
+
+    if content == "uno quit" and message.channel.id == 1363967793669738626:
+        reponse = quitter_partie_uno(message.channel.id, message.author.id)
+        await message.channel.send(reponse)
+        return
+
+    if content == "uno reset" and message.channel.id == 1363967793669738626:
+        reponse = reset_partie_uno(message.channel.id)
+        await message.channel.send(reponse)
+        return
+
 
     # Commande !croquette
     if content == "croquette" and "croquette" in scores.get(str     (message.    author.id), {}):
@@ -487,6 +813,7 @@ async def on_message(message):
             "• `!devine` → Devine un chiffre entre 1 et 10 (Patate triche parfois)\n"
             "• `!pendu` → Le pendu... avec jugement à chaque erreur\n"
             "• `!bac` → Le Baccalauréat version Patate (12 catégories + mauvaise foi)\n"
+             "• `!uno` → Le jeu de cartes où les amis ne comptent pas !\n"
             "\n"
             "📊 Pour voir ton score : `!stats`\n"
             "🏆 Pour voir les meilleurs : `!top devine` / `!top pendu` / `!top bac`\n"
@@ -898,11 +1225,18 @@ async def on_message(message):
             "🛑 `!stop` → Quitter une partie\n"
             "🎓 `!bac` → Le baccalauréat vache\n"
             "🔤 `!pendu` → Le pendu qui juge\n"
-            "🎯 `!devine` → Devine un chiffre (spoiler : Patate triche)\n\n"
+            "🎯 `!devine` → Devine un chiffre (spoiler : Patate triche)\n"
+            "`Commandes pour le Jeu UNO !\n"
+            "`🎴 Commandes du jeu UNO (uniquement dans #jouons) :\n\n"
+            "`!uno start` → Crée une nouvelle partie UNO\n"
+            "`!uno join` → Rejoins la partie (2 à 4 joueurs)\n"
+            "`!uno quit` → Quitte la partie (Patate ne t’en voudra que quelques années)• \n"
+            "`!uno reset` → Réinitialise entièrement la partie en cours\n"
+            "🏆 Le premier à ne plus avoir de carte remporte la partie. Patate jugera... avec classe.\n\n"
             "Ces commandes sont dispo partout sur le serveur\n\n"
             "📚 `!tutos` → Une sélection de tutos pour t’améliorer\n"
             "😺 `!miaou` → C’est ici, idiot.\n"
-            "🐉 `!pepette`→ Spécial @MetalRaptor ! \n"
+            "🐉 `!pepette`→ Spécial <#1357021254758043853> ! \n"
             "✨ `!meteo`→ Peut être que je vais te répondre... \n"
             "☀️ `!meteo [Ville]`→ La vraie météo ! \n"
             "🌍 `!infodujour`→ Te donne une actualité du jour (importante... ou pas). \n"
@@ -914,6 +1248,8 @@ async def on_message(message):
             "😈 `!vengeance`→ Tu peux essayer de te venger si tu veux ! \n"
             "<:chaTimide:984218971060445205> `!pardon`→ Demande pardon à Sa Chajesté et peut être il te sera accordé ! \n"
             "🏆 `!badges`→ Tu peux voir tous tes badges obtenus ! \n"
+            "`\n\n"
+
         )
         await message.channel.send(msg)
     
