@@ -1,6 +1,7 @@
 import discord
 import random
 import datetime
+from datetime import datetime, timedelta
 import json
 import os
 import requests
@@ -10,6 +11,81 @@ from dotenv import load_dotenv
 load_dotenv()
 TOKEN = os.getenv("DISCORD_TOKEN")
 NEWS_API_KEY = os.getenv("NEWS_API_KEY")
+
+# ------ BADGES -----------------
+
+ROLES_JEUX = {
+    "pendu": [
+        {"min": 1, "max": 20, "role": "Humain Faible"},
+        {"min": 21, "max": 50, "role": "Petit deviendra Grand"},
+        {"min": 51, "max": 100, "role": "Légende Vivante"},
+        {"min": 101, "max": 999, "role": "Machine de guerre"},
+    ],
+    "bac": [
+        {"min": 1, "max": 20, "role": "Connait son alphabet"},
+        {"min": 21, "max": 50, "role": "Maîtrise le français"},
+        {"min": 51, "max": 100, "role": "Incroyablement bon !"},
+        {"min": 101, "max": 999, "role": "Le Dictionnaire, c'est toi ?"},
+    ],
+    "devine": [
+        {"min": 1, "max": 20, "role": "Essayes encore !"},
+        {"min": 21, "max": 50, "role": "Iconique"},
+        {"min": 51, "max": 100, "role": "Excellence !"},
+        {"min": 101, "max": 999, "role": "T'es dans mon cerveau, avoue ?"},
+    ],
+    "croquette": [
+        {"min": 1, "max": 20, "role": "Radin !"},
+        {"min": 21, "max": 50, "role": "Ok, je t'aime bien !"},
+        {"min": 51, "max": 100, "role": "Merci pour ta générosité"},
+        {"min": 101, "max": 999, "role": "Tu veux me bouffer, c'est ça ?"},
+    ],
+}
+
+# Remplace ce chemin si tu déplaces le fichier image
+BADGE_IMAGE_PATH = "chaGG.png"
+
+async def update_role(message, jeu, score):
+    user = message.author
+    guild = message.guild
+
+    if jeu not in ROLES_JEUX:
+        return
+
+    palier = next((r for r in ROLES_JEUX[jeu] if r["min"] <= score <= r["max"]), None)
+    if not palier:
+        return
+
+    role_name = palier["role"]
+    role = discord.utils.get(guild.roles, name=role_name)
+    if not role:
+        await message.channel.send(f"⚠️ Rôle `{role_name}` introuvable.")
+        return
+
+    if role in user.roles:
+        return
+
+    autres_roles = [discord.utils.get(guild.roles, name=r["role"]) for r in ROLES_JEUX[jeu] if r["role"] != role_name]
+    for r in autres_roles:
+        if r and r in user.roles:
+            await user.remove_roles(r)
+
+    await user.add_roles(role)
+
+    # Envoi du DM avec image
+    try:
+        with open(BADGE_IMAGE_PATH, "rb") as f:
+            image_file = discord.File(f, filename="badge.png")
+            msg = (
+                f"Heyyy {user.mention} !\n\n"
+                f"Tu as mon respect pour 5min, tu as réussi à débloquer ce badge : **{role_name}** !\n\n"
+                f"Félicitations l'humain(e) !\n\n"
+                f"Mais... Vas-tu réussir à atteindre le niveau supérieur ?"
+            )
+            await user.send(content=msg, file=image_file)
+    except Exception as e:
+        await message.channel.send(f"⚠️ Impossible d'envoyer un DM à {user.mention}.")
+        print(f"Erreur DM : {e}")
+
 
 # --------- JEUX ---------------
 
@@ -37,6 +113,215 @@ with open("pendu_data.json", "r", encoding="utf-8") as f:
 
 bac_en_cours = {}  # stocke la lettre en cours pour chaque joueur dans le jeu du baccalauréat
 
+# ---------- DONNE A MANGER AU CHAUT ----------------
+
+# Fichier de sauvegarde
+PATAFILE = "patate_data.json"
+
+def charger_donnees_patate():
+    donnees_defaut = {
+        "poids": 50,
+        "dernier_repas": datetime.now().isoformat(),
+        "donateurs": {}
+    }
+
+    if os.path.exists(PATAFILE):
+        with open(PATAFILE, "r", encoding="utf-8") as f:
+            try:
+                data = json.load(f)
+            except json.JSONDecodeError:
+                data = {}
+
+        # Merge données existantes + défaut
+        for cle, valeur in donnees_defaut.items():
+            if cle not in data:
+                data[cle] = valeur
+
+        return data
+
+    return donnees_defaut
+
+def sauvegarder_donnees_patate(data):
+    with open(PATAFILE, "w", encoding="utf-8") as f:
+        json.dump(data, f, indent=4, ensure_ascii=False)
+
+def commande_croquette(user_id):
+    data = charger_donnees_patate()
+    now = datetime.now()
+    now_str = now.isoformat()
+
+    # Patate maigrit s'il n'a pas été nourri depuis 24h
+    if data.get("dernier_repas"):
+        dernier_repas = datetime.fromisoformat(data["dernier_repas"])
+        if now - dernier_repas > timedelta(hours=24):
+            data["poids"] = max(0, data["poids"] - 2)
+
+    # Vérif du quota par utilisateur
+    donateurs = data.get("donateurs", {})
+    user_logs = donateurs.get(user_id, [])
+    recent_dons = [datetime.fromisoformat(d) for d in user_logs if now - datetime.fromisoformat(d) < timedelta(hours=12)]
+
+    if len(recent_dons) >= 5:
+        return f"🚫 Patate a assez mangé venant de toi pour aujourd'hui ! (5 croquettes max / 12h)"
+
+    # Ajout de la croquette
+    data["poids"] += 1
+    recent_dons.append(now)
+    donateurs[user_id] = [d.isoformat() for d in recent_dons]
+    data["donateurs"] = donateurs
+    data["dernier_repas"] = now_str
+
+    sauvegarder_donnees_patate(data)
+
+    # Réponse RP
+    poids = data["poids"]
+    if poids < 20:
+        etat = "Un coup de vent et il s'envole... Nourrit le cette pauvre bête !"
+    elif poids < 60:
+        etat = "C'est un gros chat !"
+    else:
+        etat = "C'est plus simple de le faire rouler que de le porter !"
+
+    return f"🍽️ Tu as donné une croquette à Patate.\n[Poids actuel : {poids}/100]\n{etat}"
+
+def commande_etat():
+    data = charger_donnees_patate()
+    poids = data["poids"]
+
+    if poids < 20:
+        etat = "🥀 Patate est tout maigre... ses yeux plein d'amour demande des croquettes."
+    elif poids < 60:
+        etat = "😺 Patate est en forme. Il t’observe !"
+    else:
+        etat = "🐷 Patate déborde d'amour et ronfle en stéréo. Il vit sa meilleure vie."
+
+    return f"📊 État de Patate :\nPoids actuel : {poids}/100\n{etat}"
+
+
+# -------- LA CONNERIE DU JOUR FACON CLUEDO ------------
+
+connerie_file_path = "patate_connerie.json"  # Ou adapte le chemin
+
+
+armes = [
+    "une chaussette humide", "une boule de poils radioactive", "un coup de patte bien mérité",
+    "une plume de pigeon enragé", "un miaulement strident de 4h du mat", "une toupie possédée"
+]
+
+consequences = [
+    "Le serveur n’a plus jamais été le même.",
+    "Depuis, plus personne n’ose utiliser les emojis animés.",
+    "Ça a déclenché un séisme de niveau 2 dans le vocal.",
+    "Des miaulements hantent encore les logs de modération.",
+    "Un admin a ragequit et s’est exilé.",
+    "Le bot météo ne répond plus. Par peur."
+]
+
+def get_connerie_vraie(guild):
+    today = datetime.now().date().isoformat()
+
+    try:
+        with open(connerie_file_path, "r", encoding="utf-8") as f:
+            data = json.load(f)
+            if data["date"] == today:
+                return data["connerie"]
+    except (FileNotFoundError, json.JSONDecodeError, KeyError):
+        pass
+
+    membres = [m for m in guild.members if not m.bot]
+    victime = random.choice(membres).mention if membres else "@Quelqu’un"
+
+    canaux_visibles = [
+        c for c in guild.text_channels
+        if c.permissions_for(guild.me).send_messages and not c.is_nsfw()
+    ]
+    lieu = random.choice(canaux_visibles).mention if canaux_visibles else "#quelque-part"
+
+    arme = random.choice(armes)
+    effet = random.choice(consequences)
+    
+    victime_membre = random.choice(membres)
+    victime_id = victime_membre.id
+    victime_mention = victime_membre.mention
+
+    json.dump({"date": today, "connerie": connerie, "victime_id": victime_id}, f, indent=4, ensure_ascii=False)
+
+
+    connerie = (
+        f"📅 **Connerie du jour :**\n\n"
+        f"Patate a attaqué {victime_mention} avec {arme} dans le channel {lieu}.\n"
+        f"{effet}\n\n"
+        f"🐾 *Demain, peut-être une autre victime...*"
+    )
+
+    with open(connerie_file_path, "w", encoding="utf-8") as f:
+        json.dump({"date": today, "connerie": connerie}, f, indent=4, ensure_ascii=False)
+
+    return connerie
+
+def commande_pardon():
+    return random.choice([
+        "😾 Patate t’a vu... mais il ne te connaît pas.",
+        "😼 Patate daigne te jeter un regard. C’est déjà beaucoup.",
+        "🐾 Il ronronne... mais c’est peut-être parce qu’il a faim, pas grâce à toi.",
+        "👑 Patate t’accorde son pardon royal... pour cette fois.",
+        "🙀 Tu veux son pardon ? Il exige trois croquettes, un sacrifice et une offrande de thon.",
+        "🐈‍⬛ Patate dort. Il te pardonnera peut-être demain. Ou jamais."
+        ])
+
+def commande_vengeance():
+        return random.choice([
+            "🪓 Tu lèves la main sur Patate ? Il lève la queue sur ta dignité.",
+            "😾 Patate t’a vu. Il te suit maintenant. Même dans tes rêves.",
+            "👁️ Tu as essayé. Tu as échoué. Patate t'appelle 'humain numéro 456'.",
+            "💥 Patate te lance une boule de poils explosive. Elle explose dans ta poche.",
+            "🐾 Tu veux te venger ? Patate a déjà changé le mot de passe du Wi-Fi.",
+            "🎭 La vengeance est un plat qui se mange froid... mais Patate a vomi dedans."
+        ])
+def peut_se_venger(user_id):
+    try:
+        with open("patate_connerie.json", "r", encoding="utf-8") as f:
+            data = json.load(f)
+            return data.get("victime_id") == user_id
+    except:
+        return False
+
+def get_badges_utilisateur(message):
+    user = message.author
+    roles_utilisateur = [r.name for r in user.roles]
+
+    emoji_palier = {
+        0: "🥉",
+        1: "🥈",
+        2: "🏅",
+        3: "🏆"
+    }
+
+    badges = f"📛 **Tes Badges obtenus, humble bipède :**\n\n"
+
+    for jeu, paliers in ROLES_JEUX.items():
+        emoji_jeu = {
+            "devine": "🔢",
+            "pendu": "🔤",
+            "bac": "🎓",
+            "croquette": "🍽️"
+        }.get(jeu, "🔹")
+        badges += f"{emoji_jeu} {jeu.capitalize()} :\n"
+
+        badge_trouvé = False
+        for i, palier in enumerate(paliers):
+            if palier["role"] in roles_utilisateur:
+                badges += f"{emoji_palier.get(i, '🔹')} {palier['role']}\n"
+                badge_trouvé = True
+                break
+
+        if not badge_trouvé:
+            badges += "❌ Aucun badge pour ce jeu (encore...)\n"
+
+        badges += "\n"
+
+    return badges
+
 # -------------- DISCORD ----------------------
 
 intents = discord.Intents.default()
@@ -57,9 +342,9 @@ async def on_member_join(member):
     salon_bienvenue = client.get_channel(1364311094029451395)  # Remplace par l'ID de ton salon de bienvenue
 
     messages_bienvenue = [
-        f"Bienvenue {member.mention} ! Patate t'observe... 👁️",
+        f"Bienvenue {member.mention} ! PatateBot t'observe... 👁️",
         f"Yo {member.name}, entre donc dans la folie de ce serveur.",
-        f"{member.mention} vient d’arriver. Patate dit : 't’as intérêt à lire les règles'.",
+        f"{member.mention} vient d’arriver. PatateBot : 't’as intérêt à lire les règles'.",
         f"Bienvenue {member.name}, prépare-toi à juger ou être jugé.",
     ]
 
@@ -114,9 +399,49 @@ async def on_message(message):
         return
     content = message.content.lower().lstrip("!")
 
+    # Commande !croquette
+    if content == "croquette" and "croquette" in scores.get(str     (message.    author.id), {}):
+        score_croquette = scores[str(message.author.id)]["croquette"]
+        await update_role(message, "croquette", score_croquette)
+
+    # Commande !connerie 
+
+    if message.content.lower().startswith("!connerie"):
+        connerie = get_connerie_vraie(message.guild)
+        await message.channel.send(connerie)
+        return
+    if message.content.lower().startswith("!pardon"):
+        reponse = commande_pardon()
+        await message.channel.send(reponse)
+        return
+
+    if message.content.lower().startswith("!vengeance"):
+        reponse = commande_vengeance()
+        await message.channel.send(reponse)
+        return
+    if message.content.lower().startswith("!vengeance"):
+        if peut_se_venger(message.author.id):
+            reponse = commande_vengeance()
+        else:
+            reponse = "😼 Tu n'es pas la victime d’aujourd’hui. Patate t’ignore royalement."
+        await message.channel.send(reponse)
+        return
+
+
+    # Commande !croquette
+    if message.content.lower().startswith("!croquette"):
+        user_id = str(message.author.id)
+        reponse = commande_croquette(user_id)
+        await message.channel.send(reponse)
+        return
+
     # Commandes classiques : patate, croquette, ronron...
     if content in repliques_commandes:
         reponse = random.choice(repliques_commandes[content])
+        await message.channel.send(reponse)
+        return
+    if message.content.lower().startswith("!etat"):
+        reponse = commande_etat()
         await message.channel.send(reponse)
         return
 
@@ -484,9 +809,34 @@ async def on_message(message):
         else:
             msg += "🧠 Baccalauréat : 0/20. T’as même pas sorti un fruit.\n"
 
+        # Croquette
+        if "croquette" in scores.get(user_id, {}):
+            c = scores[user_id]["croquette"]
+            msg += f"🍽️ Croquettes offertes : {c} (Patate s’en souvient… toujours.)\n"
+        else:
+            c = 0
+            msg += "🍽️ Croquettes offertes : 0. Tu veux qu’il crève, c’est ça ?\n"
+
         msg += "\nPatate a jugé. Tu peux pleurer maintenant."
 
+        # upload roles
+
+        score_devine = d.get("victoires", 0) if "devine" in scores.get(user_id, {}) else 0
+        score_pendu = p.get("victoires", 0) if "pendu" in scores.get(user_id, {}) else 0
+        score_bac = b.get("points", 0) if "baca" in scores.get(user_id, {}) else 0
+        score_croquette = scores.get(user_id, {}).get("croquette", 0)
+
+        await update_role(message, "devine", score_devine)
+        await update_role(message, "pendu", score_pendu)
+        await update_role(message, "bac", score_bac)
+        await update_role(message, "croquette", score_croquette)
+
         await message.channel.send(msg)
+
+    # Mise à jour du rôle "croquette" partout, même hors #jouons
+    if "croquette" in scores.get(str(message.author.id), {}):
+        score_croquette = scores[str(message.author.id)]["croquette"]
+        await update_role(message, "croquette", score_croquette)
 
     elif content == "top":
         if not scores:
@@ -507,6 +857,12 @@ async def on_message(message):
 
         await message.channel.send(message_top)
     
+    if content == "badge" or content == "badges":
+        reponse = get_badges_utilisateur(message)
+        await message.channel.send(reponse)
+        return
+
+
     elif content == "miaou":
         msg = (
             "```\n"
@@ -523,10 +879,22 @@ async def on_message(message):
             "🛑 `!stop` → Quitter une partie\n"
             "🎓 `!bac` → Le baccalauréat vache\n"
             "🔤 `!pendu` → Le pendu qui juge\n"
-            "🎯 `!devine` → Devine un chiffre (spoiler : Patate triche)\n"
-            "Ces commandes sont dispo partout sur le serveur"
+            "🎯 `!devine` → Devine un chiffre (spoiler : Patate triche)\n\n"
+            "Ces commandes sont dispo partout sur le serveur\n\n"
             "📚 `!tutos` → Une sélection de tutos pour t’améliorer\n"
             "😺 `!miaou` → C’est ici, idiot.\n"
+            "🐉 `!pepette`→ Spécial @MetalRaptor ! \n"
+            "✨ `!meteo`→ Peut être que je vais te répondre... \n"
+            "☀️ `!meteo [Ville]`→ La vraie météo ! \n"
+            "🌍 `!infodujour`→ Te donne une actualité du jour (importante... ou pas). \n"
+            "🐈‍⬛ `!patate`→ Je vais te juger fort ! \n"
+            "😼 `!humain`→ Douce phrase, rien que pour toi, selon l'heure ! \n"
+            "🫘 `!croquette`→ Donne moi à manger ! \n"
+            "😻 `!ronron`→ Un peu d'amour 😽! \n"
+            "🤪 `!connerie`→ Le cluedo félin ! \n"
+            "😈 `!vengeance`→ Tu peux essayer de te venger si tu veux ! \n"
+            "<:chaTimide:984218971060445205> `!pardon`→ Demande pardon à Sa Chajesté et peut être il te sera accordé ! \n"
+            "🏆 `!badges`→ Tu peux voir tous tes badges obtenus ! \n"
         )
         await message.channel.send(msg)
     

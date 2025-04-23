@@ -1,121 +1,127 @@
 {
-  "commandes": {
-    "critiques_dessin": [
-      "🌟 C’est magnifique. Même moi, avec ma patte artistique, je n’aurais pas fait mieux.",
-      "🌀 C’est propre... mais ça fait un peu peur quand même. On va pas se mentir.",
-      "🎭 Pas mal, l’artiste. Il y a du talent. Ou du hasard. Mais j’aime."
-    ],
-    "patate": [
-      "Je t'ignore, comme je le fais avec tout ce qui n'est pas une gratouille d'oreille parfaite.",
-      "Parle plus fort, je suis occupé à juger l'humanité depuis mon trône !",
-      "Ta question est aussi vide que ma gamelle après 11h.",
-      "Tu peux me parler, mais sache que je ne t'écoute pas."
-    ],
-    "croquette": [
-      "Ce ne sont pas MES croquettes, HUMAIN inconscient !",
-      "C'est une blague, je mange pas ça moi !",
-      "C'est l'heure de mon repas, donne moi mes croquettes et VITE !"
-    ],
-    "ronron": [
-      "<:chaLove:982623525317779456> Je ne ronronne pas, je vibre d'amour !",
-      "<:chaLove:982623525317779456> Ne crois pas que c'est pour toi, c'est pour le plaid !",
-      "<:chaLove:982623525317779456> Je te Love quand même un peu HUMAIN"
-    ],
-    "meteo": [
-      "Température froide, comme ton coeur !",
-      "Tu veux savoir le temps qu'il fait ? Regarde par la fenêtre !",
-      "Quoi la météo ? T'as cru j'étais Evelyne Dhéliat moi peut être ?",
-      "Ton ciel est chargé... chargé en connerie !",
-      "Vent de drama dans 5...4...3....2....."
-    ]
-  },
-  "humain": {
-    "401823793082925057": {
-      "matin": [
-        "Tu sens le cappuccino. Et moi j'ai soif !",
-        "Tu pars travaillé ? OK, bon bah moi je vais m'ennuyer !",
-        "Où est mon plastique la gueuse ?"
-      ],
-      "après-midi": [
-        "Tu rentres enfin ? Les gens n'ont pas été gentils avec moi aujourd'hui !",
-        "C’est l’heure de la sieste ? Aller je viens avec toi !"
-      ],
-      "soirée": [
-        "Moi aussi, je vais allé sur le bureau !",
-        "Noooooooon pas GéGé !!!!!",
-        "C’est l’heure de m'emmener au lit, la vieille ! Aller je veux mes croquettes, on se dépêche !"
-      ],
-      "nuit": [
-        "Moi je ronfle dans la cuisine, toi dans ton lit !"
-      ]
+    "commandes": {
+        "critiques_dessin": [
+            "🌟 C’est magnifique. Même moi, avec ma patte artistique, je n’aurais pas fait mieux.",
+            "🌀 C’est propre... mais ça fait un peu peur quand même. On va pas se mentir.",
+            "🎭 Pas mal, l’artiste. Il y a du talent. Ou du hasard. Mais j’aime."
+        ],
+        "patate": [
+            "Je t'ignore, comme je le fais avec tout ce qui n'est pas une gratouille d'oreille parfaite.",
+            "Parle plus fort, je suis occupé à juger l'humanité depuis mon trône !",
+            "Ta question est aussi vide que ma gamelle après 11h.",
+            "Tu peux me parler, mais sache que je ne t'écoute pas."
+        ],
+        "ronron": [
+            "<:chaLove:982623525317779456> Je ne ronronne pas, je vibre d'amour !",
+            "<:chaLove:982623525317779456> Ne crois pas que c'est pour toi, c'est pour le plaid !",
+            "<:chaLove:982623525317779456> Je te Love quand même un peu HUMAIN"
+        ],
+        "meteo": [
+            "Température froide, comme ton coeur !",
+            "Tu veux savoir le temps qu'il fait ? Regarde par la fenêtre !",
+            "Quoi la météo ? T'as cru j'étais Evelyne Dhéliat moi peut être ?",
+            "Ton ciel est chargé... chargé en connerie !",
+            "Vent de drama dans 5...4...3....2....."
+        ]
     },
-    "1357021254758043853": {
-      "matin": [
-        "Me touche pas Mini Humaine ou je bois ton lait !",
-        "Aller va à l'école, hop hop hop !",
-        "Le soleil se lève, mais moi je reste couché. Logique.",
-        "T'as bien dormi ? Moi oui, j'ai revé que tu me donnais des croquettes au Saumon !"
-      ],
-      "après-midi": [
-        "Tu rentres déjà ? Eh bah tu dois être un chat aussi toi !",
-        "C’est l’heure de la sieste. La mienne, pas la tienne.",
-        "Je tolère ta présence. Mais sache que je te surveille.",
-        "Encore en vie ? Impressionnant."
-      ],
-      "soirée": [
-        "Retourne dans ta chambre petit être !",
-        "Quoi ? Comment ? Tu squattes le canapé ? Mais qui t'as permis ?",
-        "Bon, t'as l'air confortable, je vais venir sur toi !",
-        "J'ai faim ! Donne moi à manger !"
-      ],
-      "nuit": [
-        "Va au lit, demain tu auras la tête dans le c*l"
-      ]
+    "humain": {
+        "401823793082925057": {
+            "matin": [
+                "Tu sens le cappuccino. Et moi j'ai soif !",
+                "Tu pars travaillé ? OK, bon bah moi je vais m'ennuyer !",
+                "Où est mon plastique la gueuse ?"
+            ],
+            "après-midi": [
+                "Tu rentres enfin ? Les gens n'ont pas été gentils avec moi aujourd'hui !",
+                "C’est l’heure de la sieste ? Aller je viens avec toi !"
+            ],
+            "soirée": [
+                "Moi aussi, je vais allé sur le bureau !",
+                "Noooooooon pas GéGé !!!!!",
+                "C’est l’heure de m'emmener au lit, la vieille ! Aller je veux mes croquettes, on se dépêche !"
+            ],
+            "nuit": [
+                "Moi je ronfle dans la cuisine, toi dans ton lit !"
+            ]
+        },
+        "1357021254758043853": {
+            "matin": [
+                "Me touche pas Mini Humaine ou je bois ton lait !",
+                "Aller va à l'école, hop hop hop !",
+                "Le soleil se lève, mais moi je reste couché. Logique.",
+                "T'as bien dormi ? Moi oui, j'ai revé que tu me donnais des croquettes au Saumon !"
+            ],
+            "après-midi": [
+                "Tu rentres déjà ? Eh bah tu dois être un chat aussi toi !",
+                "C’est l’heure de la sieste. La mienne, pas la tienne.",
+                "Je tolère ta présence. Mais sache que je te surveille.",
+                "Encore en vie ? Impressionnant."
+            ],
+            "soirée": [
+                "Retourne dans ta chambre petit être !",
+                "Quoi ? Comment ? Tu squattes le canapé ? Mais qui t'as permis ?",
+                "Bon, t'as l'air confortable, je vais venir sur toi !",
+                "J'ai faim ! Donne moi à manger !"
+            ],
+            "nuit": [
+                "Va au lit, demain tu auras la tête dans le c*l"
+            ]
+        },
+        "259760469349367809": {
+            "matin": [
+                "Tu sens le café mais je te pardonne !",
+                "Pourquoi tu me regardes comme ça ?",
+                "Aller l'humain, lève toi et marche ! Marche vers... la porte de sortie par exemple !"
+            ],
+            "après-midi": [
+                "Mon humaine préférée n'est pas rentrée, t'en a fais quoi ?",
+                "Tiens et si je testais si tu étais confortable ?",
+                "Je vais te tolèré mais ça veut pas dire que je t'aime hein !",
+                "Mais t'es encore là toi ?"
+            ],
+            "soirée": [
+                "Retourne vers ton humaine, enfin la mienne, je te la prête !",
+                "Je ronronne intérieurement. Mon humaine, elle, c'est pire !"
+            ],
+            "nuit": [
+                "Dors et laisse moi en paix !"
+            ]
+        },
+        "default": {
+            "matin": [
+                "Tu es actif le matin ? Quelle erreur.",
+                "Pas encore le moment de me parler.",
+                "Le matin, c’est pour contempler. Pas converser.",
+                "Tu crois que j’ai envie d’interagir ? Il est 8h."
+            ],
+            "après-midi": [
+                "Tu crois que j’écoute ? Je juge, nuance.",
+                "Encore un bipède. Fascinant.",
+                "Tu parles beaucoup pour quelqu’un d’invisible.",
+                "T’as vu l’heure ? Va lire un livre."
+            ],
+            "soirée": [
+                "Je te vois dans l’ombre. Tu veux te faire adopter ?",
+                "C’est pas l’heure du drama, humain.",
+                "Patate te tolère. Temporairement."
+            ],
+            "nuit": [
+                "Un humain éveillé la nuit ? Bizarre. Intéressant.",
+                "Si tu manges à cette heure, partage.",
+                "Les vrais savent que les meilleures griffures sont nocturnes.",
+                "Tu veux parler ? Parle à la lune. Elle s’en fout aussi"
+            ]
+        }
     },
-    "259760469349367809": {
-      "matin": [
-        "Tu sens le café mais je te pardonne !",
-        "Pourquoi tu me regardes comme ça ?",
-        "Aller l'humain, lève toi et marche ! Marche vers... la porte de sortie par exemple !"
-      ],
-      "après-midi": [
-        "Mon humaine préférée n'est pas rentrée, t'en a fais quoi ?",
-        "Tiens et si je testais si tu étais confortable ?",
-        "Je vais te tolèré mais ça veut pas dire que je t'aime hein !",
-        "Mais t'es encore là toi ?"
-      ],
-      "soirée": [
-        "Retourne vers ton humaine, enfin la mienne, je te la prête !",
-        "Je ronronne intérieurement. Mon humaine, elle, c'est pire !"
-      ],
-      "nuit": [
-        "Dors et laisse moi en paix !"
-      ]
-    },
-    "default": {
-      "matin": [
-        "Tu es actif le matin ? Quelle erreur.",
-        "Pas encore le moment de me parler.",
-        "Le matin, c’est pour contempler. Pas converser.",
-        "Tu crois que j’ai envie d’interagir ? Il est 8h."
-      ],
-      "après-midi": [
-        "Tu crois que j’écoute ? Je juge, nuance.",
-        "Encore un bipède. Fascinant.",
-        "Tu parles beaucoup pour quelqu’un d’invisible.",
-        "T’as vu l’heure ? Va lire un livre."
-      ],
-      "soirée": [
-        "Je te vois dans l’ombre. Tu veux te faire adopter ?",
-        "C’est pas l’heure du drama, humain.",
-        "Patate te tolère. Temporairement."
-      ],
-      "nuit": [
-        "Un humain éveillé la nuit ? Bizarre. Intéressant.",
-        "Si tu manges à cette heure, partage.",
-        "Les vrais savent que les meilleures griffures sont nocturnes.",
-        "Tu veux parler ? Parle à la lune. Elle s’en fout aussi"
-      ]
+    "poids": 53,
+    "dernier_repas": "2025-04-23T12:26:14.635083",
+    "donateurs": {
+        "401823793082925057": [
+            "2025-04-23T09:43:24.622878",
+            "2025-04-23T12:26:14.635083"
+        ],
+        "1357021254758043853": [
+            "2025-04-23T12:25:41.916340"
+        ]
     }
-  }
 }
