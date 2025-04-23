@@ -732,7 +732,7 @@ async def on_message(message):
                 couleur, valeur = parts[1], parts[2]
                 reponse = jouer_carte_avancee(message.channel.id, message.author.id, couleur, valeur)
             else:
-                reponse = "❌ Format incorrect. Tape : `!uno play rouge 3` ou `!uno play noir +4 jaune`"
+                reponse = "❌ Format incorrect. Tape : `!play rouge 3` ou `!play noir +4 jaune`"
         except Exception as e:
             reponse = f"❌ Erreur lors de la lecture de la commande : {str(e)}"
 
