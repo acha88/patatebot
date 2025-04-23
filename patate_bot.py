@@ -720,20 +720,25 @@ async def on_message(message):
         await uno_main(message)
         return
 
-    if content.startswith("uno play") and message.channel.id == 1363967793669738626:
+    if content.startswith("play") and message.channel.id == 1363967793669738626:
         try:
             parts = content.split(" ")
-            if parts[1] == "noir" and len(parts) == 4:
+            if len(parts) == 4 and parts[1] == "noir":
+                # Carte noire + choix de couleur
                 couleur, valeur, couleur_choisie = parts[1], parts[2], parts[3]
                 reponse = jouer_carte_avec_noir(message.channel.id, message.author.id, couleur, valeur, couleur_choisie)
-            else:
+            elif len(parts) == 3:
+                # Carte classique
                 couleur, valeur = parts[1], parts[2]
                 reponse = jouer_carte_avancee(message.channel.id, message.author.id, couleur, valeur)
-
-            await message.channel.send(reponse)
+            else:
+                reponse = "❌ Format incorrect. Tape : `!uno play rouge 3` ou `!uno play noir +4 jaune`"
         except Exception as e:
-            await message.channel.send("❌ Format incorrect. Tape : `!uno play rouge 3` ou `!uno play noir +4 jaune`")
+            reponse = f"❌ Erreur lors de la lecture de la commande : {str(e)}"
+
+        await message.channel.send(reponse)
         return
+
 
     if content == "uno quit" and message.channel.id == 1363967793669738626:
         reponse = quitter_partie_uno(message.channel.id, message.author.id)
