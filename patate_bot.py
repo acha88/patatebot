@@ -291,12 +291,6 @@ def jouer_carte_avancee(channel_id, joueur_id, couleur, valeur):
     if not carte_valide(carte, partie["carte_visible"]):
         return f"🚫 Tu ne peux pas jouer cette carte sur {partie['carte_visible'][0]} {partie['carte_visible'][1]}." 
 
-    if valeur == "+2":
-        for _ in range(2):
-            partie["mains"][joueur_suivant.id].append(partie["deck"].pop())
-            message += "➕ Le joueur suivant pioche 2 cartes !\n"
-
-
     # Jouer la carte
     main.remove(carte)
     partie["carte_visible"] = carte
@@ -315,8 +309,16 @@ def jouer_carte_avancee(channel_id, joueur_id, couleur, valeur):
         index = (index + 1) % len(joueurs)
 
     joueur_suivant = joueurs[(index + 1) % len(joueurs)]
+
+    if valeur == "+2":
+        for _ in range(2):
+            partie["mains"][joueur_suivant.id].append(partie["deck"].pop())
+            message += "➕ Le joueur suivant pioche 2 cartes !\n"
+
+
     partie["joueur_actuel"] = joueur_suivant.id
 
+    partie["joueur_actuel"] = joueur_suivant.id
     return f"✅ Carte jouée : {couleur} {valeur}\n📤 Nouvelle carte visible : {couleur} {valeur}\n🕐 C’est à **{joueur_suivant.display_name}** de jouer."
 
 def quitter_partie_uno(channel_id, joueur_id):
@@ -526,15 +528,15 @@ def get_connerie_vraie(guild):
     victime_id = victime_membre.id
     victime_mention = victime_membre.mention
 
-    json.dump({"date": today, "connerie": connerie, "victime_id": victime_id}, f, indent=4, ensure_ascii=False)
-
-
     connerie = (
         f"📅 **Connerie du jour :**\n\n"
         f"Patate a attaqué {victime_mention} avec {arme} dans le channel {lieu}.\n"
         f"{effet}\n\n"
         f"🐾 *Demain, peut-être une autre victime...*"
     )
+
+    
+    json.dump({"date": today, "connerie": connerie, "victime_id": victime_id}, f, indent=4, ensure_ascii=False)
 
     with open(connerie_file_path, "w", encoding="utf-8") as f:
         json.dump({"date": today, "connerie": connerie}, f, indent=4, ensure_ascii=False)
@@ -608,9 +610,9 @@ def get_badges_utilisateur(message):
 
 intents = discord.Intents.default()
 intents.message_content = True
+intents.members = True
 client = discord.Client(intents=intents)
-intents.members = True  # Nécessaire pour détecter les arrivées et départs
-client = discord.Client(intents=intents)
+
 
 # Charger les répliques depuis un seul fichier JSON
 with open("patate_data.json", "r", encoding="utf-8") as f:
