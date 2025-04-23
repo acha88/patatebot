@@ -667,6 +667,35 @@ async def on_message(message):
 
     # Commande !uno
 
+    if content == "uno launch" and message.channel.id == 1363967793669738626:
+        reponse = lancer_partie_uno(message.channel.id)
+    await message.channel.send(reponse)
+
+    if "commence avec" in reponse:
+        joueurs = parties_uno[message.channel.id]["joueurs"]
+        deck = creer_deck_uno()
+        mains, deck = distribuer_mains(joueurs, deck)
+
+        parties_uno[message.channel.id]["deck"] = deck
+        parties_uno[message.channel.id]["mains"] = mains
+
+        for joueur in joueurs:
+            main = mains[joueur.id]
+            cartes_txt = ", ".join([f"{c[0]} {c[1]}" for c in main])
+            try:
+                await joueur.send(f"🃏 **Ta main de départ :**\n{cartes_txt}")
+            except:
+                await message.channel.send(f"❌ Impossible d’envoyer la main à {joueur.display_name} (DMs fermés ?)")
+
+        premiere_carte, deck = tirer_premiere_carte(deck)
+        parties_uno[message.channel.id]["carte_visible"] = premiere_carte
+        await message.channel.send(f"📤 **Carte visible de départ :** {premiere_carte[0]} {premiere_carte[1]}")
+
+        joueur_actuel = joueurs[0]
+        parties_uno[message.channel.id]["joueur_actuel"] = joueur_actuel.id
+        await message.channel.send(f"🕐 C’est à **{joueur_actuel.display_name}** de jouer !\nTape `!uno play couleur valeur` ou `!uno draw`.")
+        return
+
     if content == "uno start" and message.channel.id == 1363967793669738626:
         initialiser_partie_uno(message.channel.id)
         await message.channel.send("🃏 Une nouvelle partie de UNO est lancée ! Tape `!uno join` pour rejoindre (max 4 joueurs).")
@@ -677,55 +706,7 @@ async def on_message(message):
         await message.channel.send(reponse)
         return
     
-    if content == "uno launch" and message.channel.id == 1363967793669738626:
-        reponse = lancer_partie_uno(message.channel.id)
-        await message.channel.send(reponse)
 
-    # Seulement si la partie a vraiment commencé
-    if "commence avec" in reponse:
-        joueurs = parties_uno[message.channel.id]["joueurs"]
-        deck = creer_deck_uno()
-        mains, deck = distribuer_mains(joueurs, deck)
-
-        parties_uno[message.channel.id]["deck"] = deck
-        parties_uno[message.channel.id]["mains"] = mains
-
-        # Envoi des mains par DM
-        for joueur in joueurs:
-            main = mains[joueur.id]
-            cartes_txt = ", ".join([f"{c[0]} {c[1]}" for c in main])
-            try:
-                await joueur.send(f"🃏 **Ta main de départ :**\n{cartes_txt}")
-            except:
-                await message.channel.send(f"❌ Impossible d’envoyer la main à {joueur.display_name} (DMs fermés ?)")
-
-        # Tirer la première carte visible (pas noire)
-        premiere_carte, deck = tirer_premiere_carte(deck)
-        parties_uno[message.channel.id]["carte_visible"] = premiere_carte
-        await message.channel.send(f"📤 **Carte visible de départ :** {premiere_carte[0]} {premiere_carte[1]}")
-
-        # Définir le premier joueur
-        joueur_actuel = joueurs[0]
-        parties_uno[message.channel.id]["joueur_actuel"] = joueur_actuel.id
-        await message.channel.send(f"🕐 C’est à **{joueur_actuel.display_name}** de jouer !\nTape `!uno play couleur valeur` ou `!uno draw`.")
-    return
-
-   
-    
-    # Tirer la première carte visible
-    premiere_carte, deck = tirer_premiere_carte(deck)
-    parties_uno[message.channel.id]["carte_visible"] = premiere_carte
-    await message.channel.send(f"📤 **Carte visible de départ :** {premiere_carte[0]} {premiere_carte[1]}")
-
-    # Tirer la première carte visible
-    premiere_carte, deck = tirer_premiere_carte(deck)
-    parties_uno[message.channel.id]["carte_visible"] = premiere_carte
-    await message.channel.send(f"📤 **Carte visible de départ :** {premiere_carte[0]} {premiere_carte[1]}")
-
-    # Définir le joueur actuel
-    joueur_actuel = joueurs[0]
-    parties_uno[message.channel.id]["joueur_actuel"] = joueur_actuel.id
-    await message.channel.send(f"🕐 C’est à **{joueur_actuel.display_name}** de jouer !\nTape `!uno play couleur valeur` ou `!uno draw`.")  
 
     if content.startswith("uno play") and message.channel.id == 1363967793669738626:
         try:
