@@ -711,15 +711,6 @@ async def on_message(message):
         return
     
 
-
-    if content.startswith("uno play") and message.channel.id == 1363967793669738626:
-        try:
-            _, couleur, valeur = content.split(" ", 2)
-            reponse = jouer_carte_avancee(message.channel.id, message.author.id, couleur, valeur)
-            await message.channel.send(reponse)
-        except ValueError:
-            await message.channel.send("❌ Format incorrect. Tape : `!uno play rouge 3` ou `!uno play noir +4`")
-        return
     if content == "uno draw" and message.channel.id == 1363967793669738626:
         reponse = uno_piocher(message.channel.id, message.author.id)
         await message.channel.send(reponse)
