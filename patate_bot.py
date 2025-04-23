@@ -293,33 +293,37 @@ def jouer_carte_avancee(channel_id, joueur_id, couleur, valeur):
 
     # Jouer la carte
     main.remove(carte)
+    
     partie["carte_visible"] = carte
     victoire = verifier_victoire(channel_id, joueur_id)
     if victoire:
         return victoire
 
-    # Avancer au joueur suivant
     joueurs = partie["joueurs"]
     index = next((i for i, j in enumerate(joueurs) if j.id == joueur_id), 0)
+
     if valeur == "reverse":
-        joueurs.reverse()
+        partie["joueurs"].reverse()
+        joueurs = partie["joueurs"]
         index = len(joueurs) - 1 - index
 
     if valeur == "skip":
         index = (index + 1) % len(joueurs)
 
     joueur_suivant = joueurs[(index + 1) % len(joueurs)]
+    partie["joueur_actuel"] = joueur_suivant.id
+
+    # Maintenant on peut faire le +2
+    message = f"✅ Carte jouée : {couleur} {valeur}\n📤 Nouvelle carte visible : {couleur} {valeur}\n"
 
     if valeur == "+2":
         for _ in range(2):
             partie["mains"][joueur_suivant.id].append(partie["deck"].pop())
-            message += "➕ Le joueur suivant pioche 2 cartes !\n"
+        message += "➕ Le joueur suivant pioche 2 cartes !\n"
 
+    message += f"🕐 C’est à **{joueur_suivant.display_name}** de jouer."
+    return message
 
-    partie["joueur_actuel"] = joueur_suivant.id
-
-    partie["joueur_actuel"] = joueur_suivant.id
-    return f"✅ Carte jouée : {couleur} {valeur}\n📤 Nouvelle carte visible : {couleur} {valeur}\n🕐 C’est à **{joueur_suivant.display_name}** de jouer."
 
 def quitter_partie_uno(channel_id, joueur_id):
     if channel_id not in parties_uno:
