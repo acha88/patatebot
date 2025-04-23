@@ -645,10 +645,7 @@ async def on_ready():
     await client.change_presence(activity=discord.Activity(type=type_act, name=nom))
 
     client.loop.create_task(keep_alive())
-@client.event
-async def on_ready():
-    print(f"Patate est en ligne sous le nom {client.user} !")
-    client.loop.create_task(keep_alive())  # <--- ici
+
 
 @client.event
 async def on_member_remove(member):
