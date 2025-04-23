@@ -311,13 +311,16 @@ def quitter_partie_uno(channel_id, joueur_id):
 
     joueurs = [j for j in joueurs if j.id != joueur_id]
     partie["joueurs"] = joueurs
-    partie["mains"].pop(joueur_id, None)
 
-    if len(joueurs) < 2:
+    if "mains" in partie:
+        partie["mains"].pop(joueur_id, None)
+
+    if len(joueurs) < 2 and partie.get("en_cours"):
         partie["en_cours"] = False
         return f"🚪 Le joueur <@{joueur_id}> a quitté la partie. Moins de 2 joueurs restants. La partie est terminée."
 
     return f"🚪 Le joueur <@{joueur_id}> a quitté la partie UNO."
+
 
 def reset_partie_uno(channel_id):
     if channel_id in parties_uno:
