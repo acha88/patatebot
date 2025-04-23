@@ -26,6 +26,13 @@ import os
 import requests
 from dotenv import load_dotenv
 
+import asyncio
+
+async def keep_alive():
+    while True:
+        print("Patate respire.")
+        await asyncio.sleep(300)
+
 # -------- CONFIGURATION --------
 load_dotenv()
 TOKEN = os.getenv("DISCORD_TOKEN")
@@ -633,6 +640,12 @@ async def on_ready():
 
     type_act, nom = random.choice(activites)
     await client.change_presence(activity=discord.Activity(type=type_act, name=nom))
+
+    client.loop.create_task(keep_alive())
+@client.event
+async def on_ready():
+    print(f"Patate est en ligne sous le nom {client.user} !")
+    client.loop.create_task(keep_alive())  # <--- ici
 
 @client.event
 async def on_member_remove(member):
