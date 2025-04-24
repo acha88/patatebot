@@ -311,8 +311,14 @@ async def jouer_carte_avancee(message, couleur, valeur):
     index = next((i for i, j in enumerate(joueurs) if j.id == joueur_id), 0)
 
     if valeur == "reverse":
-        joueurs.reverse()
-        index = len(joueurs) - 1 - index
+        if len(joueurs) == 2:
+            # À deux joueurs, reverse = skip
+            index = (index + 1) % len(joueurs)
+        else:
+            partie["joueurs"].reverse()
+            joueurs = partie["joueurs"]
+            index = len(joueurs) - 1 - index
+
 
     if valeur == "skip":
         index = (index + 1) % len(joueurs)
@@ -781,7 +787,6 @@ async def on_message(message):
 
         await message.channel.send(reponse)
         return
-
 
 
     if content == "uno quit" and message.channel.id == 1363967793669738626:
