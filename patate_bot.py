@@ -976,6 +976,8 @@ async def on_message(message):
         mot = random.choice(mots_pendu).lower()
         lettres = []
         mot_affiche = " ".join(["__" for _ in mot])
+        mot = random.choice(mots_pendu).strip().lower()  # ← .strip() pour virer les espaces invisibles
+
 
         pendu_en_cours[user_id] = {
             "mot": mot,
@@ -984,6 +986,11 @@ async def on_message(message):
             "tentatives": 0,
             "max": 7
         }
+
+        for mot in mots_pendu:
+            if not mot.strip().isalpha():
+                print(f"⚠️ Mot suspect : {mot}")
+
 
         await message.channel.send(f"Patate t’a choisi un mot. Bonne chance, larve.\n{mot_affiche}\nTentatives restantes : 7")
         await message.channel.send(
