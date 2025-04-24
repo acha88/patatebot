@@ -213,7 +213,10 @@ def carte_valide(carte, carte_visible):
         carte[0] == "noir"               # carte spéciale
     )
 
-def jouer_carte_avec_noir(channel_id, joueur_id, couleur, valeur, couleur_choisie=None):
+async def jouer_carte_avec_noir(message, valeur, couleur_choisie):
+    channel_id = message.channel.id
+    joueur_id = message.author.id
+
     if channel_id not in parties_uno:
         return "❌ Aucune partie UNO ici."
 
@@ -225,37 +228,44 @@ def jouer_carte_avec_noir(channel_id, joueur_id, couleur, valeur, couleur_choisi
         return "🕐 Ce n’est pas ton tour, bipède impatient."
 
     main = partie["mains"].get(joueur_id, [])
-    carte = (couleur, valeur)
+    carte = ("noir", valeur)
 
     if carte not in main:
-        return f"🃏 Tu n’as pas cette carte : {couleur} {valeur}."
+        return f"🃏 Tu n’as pas cette carte : noir {valeur}."
 
-    if couleur == "noir" and not couleur_choisie:
-        return "🎨 Tu dois choisir une couleur à jouer avec cette carte noire ! (ex: !play noir +4 rouge)"
+    if not couleur_choisie:
+        return "🎨 Tu dois choisir une couleur (ex: `!play noir +4 jaune`)"
 
-    # Jouer la carte
     main.remove(carte)
-    carte_visible = (couleur_choisie, valeur) if couleur == "noir" else carte
-    partie["carte_visible"] = carte_visible
-    victoire = verifier_victoire(channel_id, joueur_id)
-    if victoire:
-        return victoire
+    partie["carte_visible"] = (couleur_choisie, valeur)
 
     joueurs = partie["joueurs"]
     index = next((i for i, j in enumerate(joueurs) if j.id == joueur_id), 0)
     joueur_suivant = joueurs[(index + 1) % len(joueurs)]
+    partie["joueur_actuel"] = joueur_suivant.id
 
-    message = f"✅ Carte jouée : {carte[0]} {carte[1]}\n🎨 Couleur choisie : {carte_visible[0]}\n"
+    message_txt = f"✅ Carte jouée : noir {valeur}\n🎨 Couleur choisie : {couleur_choisie}\n"
 
     if valeur == "+4":
-        for _ in range(4):
-            partie["mains"][joueur_suivant.id].append(partie["deck"].pop())
-        message += "➕ Le joueur suivant pioche 4 cartes !\n"
+        pioche = [partie["deck"].pop() for _ in range(4)]
+        partie["mains"][joueur_suivant.id].extend(pioche)
 
-    partie["joueur_actuel"] = joueur_suivant.id
-    message += f"🕐 C’est à **{joueur_suivant.display_name}** de jouer."
+        # 📨 DM les nouvelles cartes
+        try:
+            cartes_txt = ", ".join([f"{c[0]} {c[1]}" for c in pioche])
+            await joueur_suivant.send(f"📥 Tu as pioché à cause d’un +4 :\n{cartes_txt}")
+        except:
+            pass
 
-    return message
+        message_txt += "➕ Le joueur suivant pioche 4 cartes !\n"
+
+    victoire = verifier_victoire(channel_id, joueur_id)
+    if victoire:
+        return victoire
+
+    message_txt += f"🕐 C’est à **{joueur_suivant.display_name}** de jouer."
+    return message_txt
+
 
 def verifier_victoire(channel_id, joueur_id):
     if channel_id not in parties_uno:
@@ -270,12 +280,14 @@ def verifier_victoire(channel_id, joueur_id):
 
 
 
-def jouer_carte_avancee(channel_id, joueur_id, couleur, valeur):
+async def jouer_carte_avancee(message, couleur, valeur):
+    channel_id = message.channel.id
+    joueur_id = message.author.id
+
     if channel_id not in parties_uno:
         return "❌ Aucune partie UNO ici."
 
     partie = parties_uno[channel_id]
-
     if not partie["en_cours"]:
         return "🚫 La partie n'a pas encore commencé."
 
@@ -291,20 +303,15 @@ def jouer_carte_avancee(channel_id, joueur_id, couleur, valeur):
     if not carte_valide(carte, partie["carte_visible"]):
         return f"🚫 Tu ne peux pas jouer cette carte sur {partie['carte_visible'][0]} {partie['carte_visible'][1]}." 
 
-    # Jouer la carte
+    # On joue la carte
     main.remove(carte)
-    
     partie["carte_visible"] = carte
-    victoire = verifier_victoire(channel_id, joueur_id)
-    if victoire:
-        return victoire
 
     joueurs = partie["joueurs"]
     index = next((i for i, j in enumerate(joueurs) if j.id == joueur_id), 0)
 
     if valeur == "reverse":
-        partie["joueurs"].reverse()
-        joueurs = partie["joueurs"]
+        joueurs.reverse()
         index = len(joueurs) - 1 - index
 
     if valeur == "skip":
@@ -313,16 +320,28 @@ def jouer_carte_avancee(channel_id, joueur_id, couleur, valeur):
     joueur_suivant = joueurs[(index + 1) % len(joueurs)]
     partie["joueur_actuel"] = joueur_suivant.id
 
-    # Maintenant on peut faire le +2
-    message = f"✅ Carte jouée : {couleur} {valeur}\n📤 Nouvelle carte visible : {couleur} {valeur}\n"
+    message_txt = f"✅ Carte jouée : {couleur} {valeur}\n"
 
     if valeur == "+2":
-        for _ in range(2):
-            partie["mains"][joueur_suivant.id].append(partie["deck"].pop())
-        message += "➕ Le joueur suivant pioche 2 cartes !\n"
+        pioche = [partie["deck"].pop() for _ in range(2)]
+        partie["mains"][joueur_suivant.id].extend(pioche)
 
-    message += f"🕐 C’est à **{joueur_suivant.display_name}** de jouer."
-    return message
+        # 📨 DM les nouvelles cartes
+        try:
+            cartes_txt = ", ".join([f"{c[0]} {c[1]}" for c in pioche])
+            await joueur_suivant.send(f"📥 Tu as pioché à cause d’un +2 :\n{cartes_txt}")
+        except:
+            pass
+
+        message_txt += "➕ Le joueur suivant pioche 2 cartes !\n"
+
+    victoire = verifier_victoire(channel_id, joueur_id)
+    if victoire:
+        return victoire
+
+    message_txt += f"🕐 C’est à **{joueur_suivant.display_name}** de jouer."
+    return message_txt
+
 
 
 def quitter_partie_uno(channel_id, joueur_id):
@@ -744,17 +763,17 @@ async def on_message(message):
         await uno_main(message)
         return
 
+    
+    
     if content.startswith("play") and message.channel.id == 1363967793669738626:
         try:
             parts = content.split(" ")
             if len(parts) == 4 and parts[1] == "noir":
-                # Carte noire + choix de couleur
-                couleur, valeur, couleur_choisie = parts[1], parts[2], parts[3]
-                reponse = jouer_carte_avec_noir(message.channel.id, message.author.id, couleur, valeur, couleur_choisie)
+                valeur, couleur_choisie = parts[2], parts[3]
+                reponse = await jouer_carte_avec_noir(message, valeur, couleur_choisie)
             elif len(parts) == 3:
-                # Carte classique
                 couleur, valeur = parts[1], parts[2]
-                reponse = jouer_carte_avancee(message.channel.id, message.author.id, couleur, valeur)
+                reponse = await jouer_carte_avancee(message, couleur, valeur)
             else:
                 reponse = "❌ Format incorrect. Tape : `!play rouge 3` ou `!play noir +4 jaune`"
         except Exception as e:
@@ -762,6 +781,7 @@ async def on_message(message):
 
         await message.channel.send(reponse)
         return
+
 
 
     if content == "uno quit" and message.channel.id == 1363967793669738626:
